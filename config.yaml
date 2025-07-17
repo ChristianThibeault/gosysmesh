@@ -1,0 +1,13 @@
+interval: "5s"  # how often to collect metrics
+
+monitor:
+  local: true
+  remote:
+    - host: sol
+      user: christian
+      port: 5822
+      processes: ["python3", "snakemake", "Solar2x2dDynamo"]
+    - host: helix
+      user: christian
+      port: 5822
+      processes: ["python3", "snakemake", "Solar2x2dDynamo"]
