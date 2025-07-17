@@ -1,0 +1,9 @@
+interval: "5s"
+monitor:
+  local:
+    enabled: true
+    process_filters:
+      keywords: []
+      users: []
+      groups: []
+  remote: []

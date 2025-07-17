@@ -48,6 +48,12 @@ func LoadConfig(path string) (*Config, error) {
 		return nil, fmt.Errorf("unable to decode into struct: %w", err)
 	}
 
+	if !viper.IsSet("monitor.local") {
+    return nil, fmt.Errorf("missing required field: monitor.local")
+	}
+
+
+
 	if _, err := time.ParseDuration(config.Interval); err != nil {
 		return nil, fmt.Errorf("invalid interval format: %s", config.Interval)
 	}
