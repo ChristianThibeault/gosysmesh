@@ -51,6 +51,17 @@ var startCmd = &cobra.Command{
 					stats.MemUsedMB, stats.MemTotalMB,
 					stats.DiskUsedGB, stats.DiskTotalGB,
 				)
+
+				filtered, err := collector.GetFilteredProcesses(conf.Monitor.Local.ProcessFilters)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Error filtering processes: %v\n", err)
+				} else {
+					fmt.Printf("Matched processes:\n")
+					for _, p := range filtered {
+						fmt.Printf("PID %d: %s (%s) — %s\n", p.PID, p.Name, p.User, p.Cmdline)
+					}
+				}
+
 			case <-quit:
 				fmt.Println("Exiting system monitor.")
 				break LOOP

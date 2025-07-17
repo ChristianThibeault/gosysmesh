@@ -1,5 +1,26 @@
-interval: "5s"  # how often to collect metrics
+interval: "5s" 
 
 monitor:
-  local: true
-  remote: []
+  local:
+    enabled: true
+    process_filters:
+      keywords: ["python", "vim"]
+      users: ["christian"]
+      groups: []
+
+  remote:
+    - host: "sol"
+      user: "christian"
+      port: 5822
+      process_filters:
+        keywords: ["python", "python3"]
+        users: ["christian"]
+        groups: []
+    - host: "helix"
+      user: "christian"
+      port: 5822
+      process_filters:
+        keywords: ["python", "python3"]
+        users: ["christian"]
+        groups: []
+

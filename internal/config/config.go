@@ -7,21 +7,32 @@ import (
 	"github.com/spf13/viper"
 )
 
+type ProcessFilterConfig struct {
+    Keywords []string `mapstructure:"keywords"`
+    Users    []string `mapstructure:"users"`
+    Groups   []string `mapstructure:"groups"`
+}
+
+type LocalMonitorConfig struct {
+    Enabled        bool                `mapstructure:"enabled"`
+    ProcessFilters ProcessFilterConfig `mapstructure:"process_filters"`
+}
+
 type RemoteTarget struct {
-	Host      string   `mapstructure:"host"`
-	User      string   `mapstructure:"user"`
-	Port      int      `mapstructure:"port"`
-	Processes []string `mapstructure:"processes"`
+    Host           string              `mapstructure:"host"`
+    User           string              `mapstructure:"user"`
+    Port           int                 `mapstructure:"port"`
+    ProcessFilters ProcessFilterConfig `mapstructure:"process_filters"`
 }
 
 type MonitorConfig struct {
-	Local  bool           `mapstructure:"local"`
-	Remote []RemoteTarget `mapstructure:"remote"`
+    Local  LocalMonitorConfig `mapstructure:"local"`
+    Remote []RemoteTarget     `mapstructure:"remote"`
 }
 
 type Config struct {
-	Interval string        `mapstructure:"interval"`
-	Monitor  MonitorConfig `mapstructure:"monitor"`
+    Interval string        `mapstructure:"interval"`
+    Monitor  MonitorConfig `mapstructure:"monitor"`
 }
 
 func LoadConfig(path string) (*Config, error) {
@@ -37,7 +48,6 @@ func LoadConfig(path string) (*Config, error) {
 		return nil, fmt.Errorf("unable to decode into struct: %w", err)
 	}
 
-	// Optional: validate interval format
 	if _, err := time.ParseDuration(config.Interval); err != nil {
 		return nil, fmt.Errorf("invalid interval format: %s", config.Interval)
 	}
