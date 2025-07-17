@@ -3,16 +3,18 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
+	"github.com/ChristianThibeault/gosysmesh/internal/collector"
 	"github.com/ChristianThibeault/gosysmesh/internal/config"
 	"github.com/spf13/cobra"
 )
 
-// var cfgFile string
-
 var startCmd = &cobra.Command{
 	Use:   "start",
-	Short: "Start system monitoring based on config.yaml",
+	Short: "Start system monitoring",
 	Run: func(cmd *cobra.Command, args []string) {
 		conf, err := config.LoadConfig(cfgFile)
 		if err != nil {
@@ -20,24 +22,40 @@ var startCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		fmt.Println("Loaded config:")
-		fmt.Printf("Interval: %s\n", conf.Interval)
-
-		if conf.Monitor.Local {
-			fmt.Println("✅ Local monitoring enabled.")
-			// Start local collector here...
+		interval, err := time.ParseDuration(conf.Interval)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Invalid interval: %v\n", err)
+			os.Exit(1)
 		}
 
-		for _, remote := range conf.Monitor.Remote {
-			fmt.Printf("🌐 Remote: %s@%s (port %d), tracking: %v\n",
-				remote.User, remote.Host, remote.Port, remote.Processes)
-			// Connect via SSH and collect...
+		fmt.Printf("Starting local system monitor: every %s\n", interval)
+
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+
+		quit := make(chan os.Signal, 1)
+		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	LOOP:
+		for {
+			select {
+			case <-ticker.C:
+				stats, err := collector.GetSystemStats()
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Error collecting stats: %v\n", err)
+					continue
+				}
+				fmt.Printf("[%s] CPU: %.1f%% | MEM: %.0f/%.0f MB | DISK: %.1f/%.1f GB\n",
+					stats.Timestamp.Format("15:04:05"),
+					stats.CPUPercent,
+					stats.MemUsedMB, stats.MemTotalMB,
+					stats.DiskUsedGB, stats.DiskTotalGB,
+				)
+			case <-quit:
+				fmt.Println("Exiting system monitor.")
+				break LOOP
+			}
 		}
 	},
-}
-
-func init() {
-	rootCmd.AddCommand(startCmd)
-	startCmd.Flags().StringVar(&cfgFile, "config", "config.yaml", "Path to config file")
 }
 
