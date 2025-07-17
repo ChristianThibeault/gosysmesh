@@ -9,6 +9,7 @@ import (
 	"github.com/shirou/gopsutil/v3/mem"
 )
 
+// SystemStats holds system resource usage metrics.
 type SystemStats struct {
 	Timestamp   time.Time
 	CPUPercent  float64
@@ -18,6 +19,7 @@ type SystemStats struct {
 	DiskTotalGB float64
 }
 
+// GetSystemStats collects CPU, memory, and disk usage statistics.
 func GetSystemStats() (*SystemStats, error) {
 	cpuPercents, err := cpu.Percent(0, false)
 	if err != nil {

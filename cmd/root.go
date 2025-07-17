@@ -1,7 +1,6 @@
-/*
-Copyright © 2025 NAME HERE <EMAIL ADDRESS>
-
-*/
+// Package cmd defines the root CLI commands for gosysmesh.
+//
+// Copyright © 2025 Christian Thibeault <ChristianThibeaultNB@gmail.com>
 package cmd
 
 import (

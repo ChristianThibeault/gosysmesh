@@ -8,6 +8,7 @@ import (
 	"github.com/ChristianThibeault/gosysmesh/internal/config"
 )
 
+// MonitoredProcess represents a filtered process with basic details.
 type MonitoredProcess struct {
 	PID     int32
 	User    string
@@ -15,6 +16,7 @@ type MonitoredProcess struct {
 	Name    string
 }
 
+// GetFilteredProcesses retrieves processes based on the provided filters.
 func GetFilteredProcesses(filters config.ProcessFilterConfig) ([]MonitoredProcess, error) {
 	procs, err := process.Processes()
 	if err != nil {
@@ -46,6 +48,7 @@ func GetFilteredProcesses(filters config.ProcessFilterConfig) ([]MonitoredProces
 	return matches, nil
 }
 
+// matchesKeyword checks if the process name or command line contains any of the specified keywords.
 func matchesKeyword(name, cmdline string, keywords []string) bool {
 	for _, kw := range keywords {
 		if strings.Contains(name, kw) || strings.Contains(cmdline, kw) {
@@ -55,6 +58,7 @@ func matchesKeyword(name, cmdline string, keywords []string) bool {
 	return false
 }
 
+// stringInSlice checks if a string is present in a slice of strings.
 func stringInSlice(s string, list []string) bool {
 	for _, item := range list {
 		if item == s {
