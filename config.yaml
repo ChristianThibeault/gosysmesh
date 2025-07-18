@@ -12,6 +12,8 @@ monitor:
     - host: "sol"
       user: "christian"
       port: 5822
+      ssh_key: "~/.ssh/id_ed25519"
+      proxy_jump: "venus"
       process_filters:
         keywords: ["python", "python3"]
         users: ["christian"]
@@ -19,6 +21,8 @@ monitor:
     - host: "helix"
       user: "christian"
       port: 5822
+      ssh_key: "~/.ssh/id_ed25519"
+      proxy_jump: "venus"
       process_filters:
         keywords: ["python", "python3"]
         users: ["christian"]

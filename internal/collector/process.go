@@ -14,6 +14,9 @@ type MonitoredProcess struct {
 	User    string
 	Cmdline string
 	Name    string
+    CPU   float64
+    MEM   float64
+    Group string
 }
 
 // GetFilteredProcesses retrieves processes based on the provided filters.
@@ -66,5 +69,25 @@ func stringInSlice(s string, list []string) bool {
 		}
 	}
 	return false
+}
+
+// MatchProcessFilters returns true if the given MonitoredProcess matches the filter
+func MatchProcessFilters(proc MonitoredProcess, filters config.ProcessFilterConfig) bool {
+    for _, keyword := range filters.Keywords {
+        if strings.Contains(proc.Name, keyword) {
+            return true
+        }
+    }
+    for _, user := range filters.Users {
+        if proc.User == user {
+            return true
+        }
+    }
+    for _, group := range filters.Groups {
+        if proc.Group == group {
+            return true
+        }
+    }
+    return false
 }
 

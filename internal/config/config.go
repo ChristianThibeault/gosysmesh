@@ -25,8 +25,20 @@ type RemoteTarget struct {
     Host           string              `mapstructure:"host"`
     User           string              `mapstructure:"user"`
     Port           int                 `mapstructure:"port"`
+	SSHKey         string              `mapstructure:"ssh_key"` 
+	ProxyJump      string         	   `mapstructure:"proxy_jump,omitempty"`
     ProcessFilters ProcessFilterConfig `mapstructure:"process_filters"`
 }
+
+
+// JumpConfig defines the configuration for SSH jump hosts.
+type JumpConfig struct {
+    Host       string `mapstructure:"host"`
+    User       string `mapstructure:"user"`
+    Port       int    `mapstructure:"port"`
+    SSHKeyPath string `mapstructure:"ssh_key"`
+}
+
 
 // MonitorConfig aggregates local and remote monitoring configurations.
 type MonitorConfig struct {

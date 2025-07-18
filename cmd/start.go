@@ -9,6 +9,7 @@ import (
 
 	"github.com/ChristianThibeault/gosysmesh/internal/collector"
 	"github.com/ChristianThibeault/gosysmesh/internal/config"
+	"github.com/ChristianThibeault/gosysmesh/internal/remote"
 	"github.com/spf13/cobra"
 )
 
@@ -61,6 +62,21 @@ var startCmd = &cobra.Command{
 						fmt.Printf("PID %d: %s (%s) — %s\n", p.PID, p.Name, p.User, p.Cmdline)
 					}
 				}
+
+				for _, target := range conf.Monitor.Remote {
+					metrics, err := remote.CollectRemoteStats(target)
+					if err != nil {
+						fmt.Fprintf(os.Stderr, "Remote %s error: %v\n", target.Host, err)
+						continue
+					}
+
+					fmt.Printf("[%s][%s] %d processes matched\n",
+						metrics.Timestamp.Format("15:04:05"), metrics.Host, len(metrics.Processes),
+					)
+				}
+
+
+
 
 			case <-quit:
 				fmt.Println("Exiting system monitor.")
