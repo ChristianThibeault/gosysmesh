@@ -87,10 +87,10 @@ var startCmd = &cobra.Command{
 					fmt.Printf("[%s][%s] %d processes matched\n",
 						metrics.Timestamp.Format("15:04:05"), metrics.Host, len(metrics.Processes),
 					)
-					fmt.Printf("COMMAND                   TIME      START               STAT   %%CPU  MEM(MB)    PID  USER\n")
+					fmt.Printf("FULL COMMAND                                TIME      START               STAT   %%CPU  MEM(MB)    PID  USER\n")
 					for _, p := range metrics.Processes {
-						fmt.Printf("%-25s  %-8s  %-18s  %-6s  %6.1f  %6.0f  %6d  %-10s\n",
-						p.Name,
+						fmt.Printf("%-40s  %-8s  %-18s  %-6s  %6.1f  %6.0f  %6d  %-10s\n",
+						p.Cmdline,
 						metrics.Timestamp.Format("15:04:05"),
 						p.StartTime,
 						p.Status,
@@ -100,6 +100,7 @@ var startCmd = &cobra.Command{
 						p.User,
 					)
 				}
+
 
 				}
 

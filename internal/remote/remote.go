@@ -19,7 +19,7 @@ type RemoteMetrics struct {
 
 // CollectRemoteStats collects process info from a remote server via OpenSSH
 func CollectRemoteStats(target config.RemoteTarget) (*RemoteMetrics, error) {
-	cmd := `ps -eo pid,comm,user,%cpu,%mem,stat,lstart --no-headers`
+	cmd := `ps -eo pid,user,%cpu,%mem,stat,lstart,args --no-headers`
 	output, err := RunSSHCommandOpenSSH(target.User, target.Host, target.Port, target.SSHKey, target.ProxyJump, cmd)
 	if err != nil {
 		return nil, fmt.Errorf("failed to run remote ps on %s: %w", target.Host, err)
@@ -41,21 +41,22 @@ func parseProcessOutput(output string, filters config.ProcessFilterConfig) []col
 
 	for _, line := range lines {
 		fields := strings.Fields(line)
-		if len(fields) < 7 {
+		if len(fields) < 8 {
 			continue
 		}
 
 		pid := fields[0]
-		cmd := fields[1]
-		user := fields[2]
-		cpu := fields[3]
-		mem := fields[4]
-		stat := fields[5]
-		start := strings.Join(fields[6:], " ") // lstart is split into 5 fields
+		user := fields[1]
+		cpu := fields[2]
+		mem := fields[3]
+		stat := fields[4]
+		start := strings.Join(fields[5:10], " ") // lstart is 5 fields
+		cmdline := strings.Join(fields[10:], " ") // everything after is the command
+
 
 
 		proc := collector.MonitoredProcess{
-			Name:  cmd,
+			Name:  cmdline,
 			User:  user,
 			Group: "",
 		}
@@ -79,7 +80,8 @@ func parseProcessOutput(output string, filters config.ProcessFilterConfig) []col
 		result = append(result, collector.MonitoredProcess{
 			PID:       int32(pidInt),
 			User:      user,
-			Name:      cmd,
+			Name:      cmdline,
+			Cmdline:   cmdline,
 			CPU:       cpuFloat,
 			MEM:       memFloat,
 			Status:    stat,
