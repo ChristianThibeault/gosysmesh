@@ -19,9 +19,14 @@ func RunSSHCommandOpenSSH(user, host string, port int, keyPath, proxyJump, comma
 		"-o", "UserKnownHostsFile=/dev/null",
 	}
 
+	// if proxyJump != "" {
+	// 	args = append([]string{"-J", proxyJump}, args...)
+	// }
 	if proxyJump != "" {
-		args = append([]string{"-J", proxyJump}, args...)
+		proxy := fmt.Sprintf("%s@%s:%d", user, proxyJump, 5822)
+		args = append([]string{"-J", proxy}, args...)
 	}
+
 
 	args = append(args, command)
 
