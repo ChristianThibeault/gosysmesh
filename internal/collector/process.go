@@ -3,6 +3,7 @@ package collector
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/shirou/gopsutil/v3/process"
 	"github.com/ChristianThibeault/gosysmesh/internal/config"
@@ -10,13 +11,15 @@ import (
 
 // MonitoredProcess represents a filtered process with basic details.
 type MonitoredProcess struct {
-	PID     int32
-	User    string
-	Cmdline string
-	Name    string
-    CPU   float64
-    MEM   float64
-    Group string
+	PID       int32
+	User      string
+	Group     string
+	Name      string
+	Cmdline   string
+	CPU       float64
+	MEM       float64
+	StartTime string 
+	Status    string 
 }
 
 // GetFilteredProcesses retrieves processes based on the provided filters.
@@ -29,9 +32,25 @@ func GetFilteredProcesses(filters config.ProcessFilterConfig) ([]MonitoredProces
 	var matches []MonitoredProcess
 
 	for _, p := range procs {
+		// name, _ := p.Name()
+		// cmdline, _ := p.Cmdline()
+		// username, _ := p.Username()
+
 		name, _ := p.Name()
 		cmdline, _ := p.Cmdline()
 		username, _ := p.Username()
+		cpuPercent, _ := p.CPUPercent()
+		memPercent, _ := p.MemoryPercent()
+		startTime, _ := p.CreateTime() // returns Unix milliseconds
+		statusList, _ := p.Status()
+		status := ""
+		if len(statusList) > 0 {
+			status = statusList[0]
+		}
+
+
+		start := time.UnixMilli(startTime).Format("15:04:05")
+
 
 		if !matchesKeyword(name, cmdline, filters.Keywords) {
 			continue
@@ -45,7 +64,14 @@ func GetFilteredProcesses(filters config.ProcessFilterConfig) ([]MonitoredProces
 			User:    username,
 			Name:    name,
 			Cmdline: cmdline,
+			CPU:       cpuPercent,
+			MEM:       float64(memPercent),
+			Status:    status,
+			StartTime: start,
 		})
+
+
+
 	}
 
 	return matches, nil
