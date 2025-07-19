@@ -58,13 +58,10 @@ var startCmd = &cobra.Command{
 					fmt.Fprintf(os.Stderr, "Error filtering processes: %v\n", err)
 				} else {
 					fmt.Printf("Matched processes:\n")
-					// for _, p := range filtered {
-					// 	fmt.Printf("PID %d: %s (%s) — %s\n", p.PID, p.Name, p.User, p.Cmdline)
-					// }
-					fmt.Printf("%-25s  %-8s  %-8s  %-6s  %6s  %6s  %6s  %-10s\n", "COMMAND", "TIME", "START", "STAT", "%CPU", "MEM(MB)", "PID", "USER")
+					fmt.Printf("%-40s  %-8s  %-8s  %-6s  %6s  %6s  %6s  %-10s\n", "COMMAND", "TIME", "START", "STAT", "%CPU", "MEM(MB)", "PID", "USER")
 					for _, p := range filtered {
-						fmt.Printf("%-25s  %-8s  %-8s  %-6s  %6.1f  %6.0f  %6d  %-10s\n",
-						p.Name,
+						fmt.Printf("%-40s  %-8s  %-8s  %-6s  %6.1f  %6.0f  %6d  %-10s\n",
+						p.Cmdline,
 						time.Now().Format("15:04:05"),
 						p.StartTime,
 						p.Status,
