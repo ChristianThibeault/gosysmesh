@@ -20,8 +20,11 @@ type RemoteMetrics struct {
 
 // CollectRemoteStats collects process info and system stats from a remote server via OpenSSH
 func CollectRemoteStats(target config.RemoteTarget) (*RemoteMetrics, error) {
-	// Collect process info
-	cmd := fmt.Sprintf(`ps -u %s -o pid,user,%%cpu,%%mem,stat,lstart,args --no-headers`, target.User)
+	// Collect process info using safe command builder
+	cmd, err := BuildPsCommand(target.User)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build ps command: %w", err)
+	}
 	output, err := RunSSHCommandOpenSSH(target.User, target.Host, target.Port, target.SSHKey, target.ProxyJump, cmd)
 	if err != nil {
 		return nil, fmt.Errorf("failed to run remote ps on %s: %w", target.Host, err)
@@ -103,8 +106,8 @@ func parseProcessOutput(output string, filters config.ProcessFilterConfig) []col
 
 // collectRemoteSystemStats collects system stats from a remote server via SSH
 func collectRemoteSystemStats(target config.RemoteTarget) (*collector.SystemStats, error) {
-	// Run multiple commands to get system stats
-	cmd := `top -bn1 | grep "Cpu(s)" | awk '{print $2}' | sed 's/%us,//'; free -m | awk 'NR==2{printf "%.0f %.0f", $3,$2}'; df -h / | awk 'NR==2{gsub(/[^0-9.]/, "", $3); gsub(/[^0-9.]/, "", $2); printf " %.1f %.1f", $3, $2}'`
+	// Use pre-approved system stats command
+	cmd := BuildSystemStatsCommand()
 	
 	output, err := RunSSHCommandOpenSSH(target.User, target.Host, target.Port, target.SSHKey, target.ProxyJump, cmd)
 	if err != nil {

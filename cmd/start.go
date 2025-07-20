@@ -58,6 +58,60 @@ func printHostProcesses(title string, timestamp time.Time, procs []collector.Mon
 }
 
 
+var (
+	loopMode bool
+)
+
+// runMonitoring performs a single monitoring cycle
+func runMonitoring(conf *config.Config) {
+	// Collect and print local system stats
+	stats, err := collector.GetSystemStats()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error collecting stats: %v\n", err)
+	} else {
+		fmt.Printf("[%s] CPU: %.1f%% | MEM: %.0f/%.0f MB | DISK: %.1f/%.1f GB\n",
+			stats.Timestamp.Format("15:04:05"),
+			stats.CPUPercent,
+			stats.MemUsedMB, stats.MemTotalMB,
+			stats.DiskUsedGB, stats.DiskTotalGB,
+		)
+	}
+
+	// Collect and print local processes
+	filtered, err := collector.GetFilteredProcesses(conf.Monitor.Local.ProcessFilters)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error filtering processes: %v\n", err)
+	} else {
+		printHostProcesses("local", time.Now(), filtered)
+	}
+
+	// Collect and print remote stats
+	for _, target := range conf.Monitor.Remote {
+		metrics, err := remote.CollectRemoteStats(target)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Remote %s error: %v\n", target.Host, err)
+			continue
+		}
+
+		// Print remote system stats
+		if metrics.SystemStats != nil {
+			fmt.Printf("[%s][%s] CPU: %.1f%% | MEM: %.0f/%.0f MB | DISK: %.1f/%.1f GB\n",
+				metrics.Timestamp.Format("15:04:05"), metrics.Host,
+				metrics.SystemStats.CPUPercent,
+				metrics.SystemStats.MemUsedMB, metrics.SystemStats.MemTotalMB,
+				metrics.SystemStats.DiskUsedGB, metrics.SystemStats.DiskTotalGB,
+			)
+		}
+
+		fmt.Printf("[%s][%s] %d processes matched\n",
+				metrics.Timestamp.Format("15:04:05"), metrics.Host, len(metrics.Processes),)
+
+		if len(metrics.Processes) > 0 {
+			printHostProcesses(target.Host, metrics.Timestamp, metrics.Processes)
+		}
+	}
+}
+
 var startCmd = &cobra.Command{
 	Use:   "start",
 	Short: "Start system monitoring",
@@ -68,74 +122,41 @@ var startCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		interval, err := time.ParseDuration(conf.Interval)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Invalid interval: %v\n", err)
-			os.Exit(1)
-		}
-
-		fmt.Printf("Starting local system monitor: every %s\n", interval)
-
-		ticker := time.NewTicker(interval)
-		defer ticker.Stop()
-
-		quit := make(chan os.Signal, 1)
-		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-
-		LOOP:
-		for {
-			select {
-			case <-ticker.C:
-
-
-				stats, err := collector.GetSystemStats()
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "Error collecting stats: %v\n", err)
-					continue
-				}
-
-				fmt.Printf("[%s] CPU: %.1f%% | MEM: %.0f/%.0f MB | DISK: %.1f/%.1f GB\n",
-				stats.Timestamp.Format("15:04:05"),
-				stats.CPUPercent,
-				stats.MemUsedMB, stats.MemTotalMB,
-				stats.DiskUsedGB, stats.DiskTotalGB,
-			)
-
-			filtered, err := collector.GetFilteredProcesses(conf.Monitor.Local.ProcessFilters)
+		if loopMode {
+			interval, err := time.ParseDuration(conf.Interval)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error filtering processes: %v\n", err)
-			} else {
-				printHostProcesses("local", time.Now(), filtered)
+				fmt.Fprintf(os.Stderr, "Invalid interval: %v\n", err)
+				os.Exit(1)
 			}
 
-			for _, target := range conf.Monitor.Remote {
-				metrics, err := remote.CollectRemoteStats(target)
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "Remote %s error: %v\n", target.Host, err)
-					continue
-				}
+			fmt.Printf("Starting system monitor in loop mode: every %s\n", interval)
 
-				// Print remote system stats
-				if metrics.SystemStats != nil {
-					fmt.Printf("[%s][%s] CPU: %.1f%% | MEM: %.0f/%.0f MB | DISK: %.1f/%.1f GB\n",
-						metrics.Timestamp.Format("15:04:05"), metrics.Host,
-						metrics.SystemStats.CPUPercent,
-						metrics.SystemStats.MemUsedMB, metrics.SystemStats.MemTotalMB,
-						metrics.SystemStats.DiskUsedGB, metrics.SystemStats.DiskTotalGB,
-					)
-				}
+			ticker := time.NewTicker(interval)
+			defer ticker.Stop()
 
-				if len(metrics.Processes) > 0 {
-					printHostProcesses(target.Host, metrics.Timestamp, metrics.Processes)
+			quit := make(chan os.Signal, 1)
+			signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+			// Run initial monitoring
+			runMonitoring(conf)
+
+			for {
+				select {
+				case <-ticker.C:
+					runMonitoring(conf)
+				case <-quit:
+					fmt.Println("Exiting system monitor.")
+					return
 				}
 			}
-
-
-			case <-quit:
-				fmt.Println("Exiting system monitor.")
-				break LOOP
-			}
+		} else {
+			// Run once
+			runMonitoring(conf)
 		}
 	},
+}
+
+func init() {
+	startCmd.Flags().BoolVarP(&loopMode, "loop", "l", false, "Run continuously (default: run once)")
 }
 
