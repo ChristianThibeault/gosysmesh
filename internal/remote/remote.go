@@ -12,13 +12,15 @@ import (
 
 // RemoteMetrics holds data collected from a remote server
 type RemoteMetrics struct {
-	Host      string
-	Timestamp time.Time
-	Processes []collector.MonitoredProcess
+	Host        string
+	Timestamp   time.Time
+	Processes   []collector.MonitoredProcess
+	SystemStats *collector.SystemStats
 }
 
-// CollectRemoteStats collects process info from a remote server via OpenSSH
+// CollectRemoteStats collects process info and system stats from a remote server via OpenSSH
 func CollectRemoteStats(target config.RemoteTarget) (*RemoteMetrics, error) {
+	// Collect process info
 	cmd := fmt.Sprintf(`ps -u %s -o pid,user,%%cpu,%%mem,stat,lstart,args --no-headers`, target.User)
 	output, err := RunSSHCommandOpenSSH(target.User, target.Host, target.Port, target.SSHKey, target.ProxyJump, cmd)
 	if err != nil {
@@ -27,10 +29,17 @@ func CollectRemoteStats(target config.RemoteTarget) (*RemoteMetrics, error) {
 
 	procs := parseProcessOutput(output, target.ProcessFilters)
 
+	// Collect system stats
+	systemStats, err := collectRemoteSystemStats(target)
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect system stats from %s: %w", target.Host, err)
+	}
+
 	return &RemoteMetrics{
-		Host:      target.Host,
-		Timestamp: time.Now(),
-		Processes: procs,
+		Host:        target.Host,
+		Timestamp:   time.Now(),
+		Processes:   procs,
+		SystemStats: systemStats,
 	}, nil
 }
 
@@ -90,5 +99,60 @@ func parseProcessOutput(output string, filters config.ProcessFilterConfig) []col
 	}
 
 	return result
+}
+
+// collectRemoteSystemStats collects system stats from a remote server via SSH
+func collectRemoteSystemStats(target config.RemoteTarget) (*collector.SystemStats, error) {
+	// Run multiple commands to get system stats
+	cmd := `top -bn1 | grep "Cpu(s)" | awk '{print $2}' | sed 's/%us,//'; free -m | awk 'NR==2{printf "%.0f %.0f", $3,$2}'; df -h / | awk 'NR==2{gsub(/[^0-9.]/, "", $3); gsub(/[^0-9.]/, "", $2); printf " %.1f %.1f", $3, $2}'`
+	
+	output, err := RunSSHCommandOpenSSH(target.User, target.Host, target.Port, target.SSHKey, target.ProxyJump, cmd)
+	if err != nil {
+		return nil, fmt.Errorf("failed to run system stats command: %w", err)
+	}
+
+	return parseSystemStatsOutput(output)
+}
+
+// parseSystemStatsOutput parses system stats from remote command output
+func parseSystemStatsOutput(output string) (*collector.SystemStats, error) {
+	parts := strings.Fields(strings.TrimSpace(output))
+	if len(parts) < 5 {
+		return nil, fmt.Errorf("invalid system stats output: %s", output)
+	}
+
+	cpuPercent, err := strconv.ParseFloat(parts[0], 64)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse CPU: %w", err)
+	}
+
+	memUsed, err := strconv.ParseFloat(parts[1], 64)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse memory used: %w", err)
+	}
+
+	memTotal, err := strconv.ParseFloat(parts[2], 64)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse memory total: %w", err)
+	}
+
+	diskUsed, err := strconv.ParseFloat(parts[3], 64)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse disk used: %w", err)
+	}
+
+	diskTotal, err := strconv.ParseFloat(parts[4], 64)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse disk total: %w", err)
+	}
+
+	return &collector.SystemStats{
+		Timestamp:   time.Now(),
+		CPUPercent:  cpuPercent,
+		MemUsedMB:   memUsed,
+		MemTotalMB:  memTotal,
+		DiskUsedGB:  diskUsed,
+		DiskTotalGB: diskTotal,
+	}, nil
 }
 

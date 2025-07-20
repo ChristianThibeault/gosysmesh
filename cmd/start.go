@@ -41,8 +41,16 @@ func printHostProcesses(title string, timestamp time.Time, procs []collector.Mon
 			cpuColor = yellow
 		}
 
+		memColor := green
+		switch {
+		case p.MEM > 70: // >70%
+			memColor = red
+		case p.MEM > 30: // >30%
+			memColor = yellow
+		}
+
 		fmt.Printf("%s PID %-6d: %s\n", conn, p.PID, p.Cmdline)
-		fmt.Printf("│   ├── %sCPU:%s %.1f%%   MEM: %.0f MB\n", cpuColor, reset, p.CPU, p.MEM)
+		fmt.Printf("│   ├── %sCPU:%s %.1f%%   %sMEM:%s %.1f%%\n", cpuColor, reset, p.CPU, memColor, reset, p.MEM)
 		fmt.Printf("│   └── Start: %s   Stat: %s   User: %s%s%s\n",
 			p.StartTime, p.Status, blue, p.User, reset)
 	}
@@ -78,11 +86,14 @@ var startCmd = &cobra.Command{
 		for {
 			select {
 			case <-ticker.C:
+
+
 				stats, err := collector.GetSystemStats()
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "Error collecting stats: %v\n", err)
 					continue
 				}
+
 				fmt.Printf("[%s] CPU: %.1f%% | MEM: %.0f/%.0f MB | DISK: %.1f/%.1f GB\n",
 				stats.Timestamp.Format("15:04:05"),
 				stats.CPUPercent,
@@ -94,8 +105,6 @@ var startCmd = &cobra.Command{
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error filtering processes: %v\n", err)
 			} else {
-				fmt.Printf("Matched processes:\n")
-				fmt.Printf("%-40s  %-8s  %-8s  %-6s  %6s  %6s  %6s  %-10s\n", "COMMAND", "TIME", "START", "STAT", "%CPU", "MEM(MB)", "PID", "USER")
 				printHostProcesses("local", time.Now(), filtered)
 			}
 
@@ -106,12 +115,20 @@ var startCmd = &cobra.Command{
 					continue
 				}
 
-				fmt.Printf("[%s][%s] %d processes matched\n",
-				metrics.Timestamp.Format("15:04:05"), metrics.Host, len(metrics.Processes),
-			)
-			fmt.Printf("FULL COMMAND                                TIME      START               STAT   %%CPU  MEM(MB)    PID  USER\n")
-			printHostProcesses(target.Host, metrics.Timestamp, metrics.Processes)
-		}
+				// Print remote system stats
+				if metrics.SystemStats != nil {
+					fmt.Printf("[%s][%s] CPU: %.1f%% | MEM: %.0f/%.0f MB | DISK: %.1f/%.1f GB\n",
+						metrics.Timestamp.Format("15:04:05"), metrics.Host,
+						metrics.SystemStats.CPUPercent,
+						metrics.SystemStats.MemUsedMB, metrics.SystemStats.MemTotalMB,
+						metrics.SystemStats.DiskUsedGB, metrics.SystemStats.DiskTotalGB,
+					)
+				}
+
+				if len(metrics.Processes) > 0 {
+					printHostProcesses(target.Host, metrics.Timestamp, metrics.Processes)
+				}
+			}
 
 
 			case <-quit:
