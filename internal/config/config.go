@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -196,7 +195,9 @@ func validateHostname(host string) error {
 
 	// Allow hostname format (RFC 1123) or IP address
 	hostnameRegex := regexp.MustCompile(`^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?$`)
-	ipRegex := regexp.MustCompile(`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`)
+	
+	// More strict IP validation
+	ipRegex := regexp.MustCompile(`^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$`)
 
 	if !hostnameRegex.MatchString(host) && !ipRegex.MatchString(host) {
 		return fmt.Errorf("invalid hostname or IP address format")
@@ -228,9 +229,8 @@ func validateFilePath(path string) error {
 		return fmt.Errorf("file path too long")
 	}
 
-	// Clean the path to prevent traversal attacks
-	cleanPath := filepath.Clean(path)
-	if strings.Contains(cleanPath, "..") {
+	// Prevent path traversal attacks more strictly
+	if strings.Contains(path, "..") {
 		return fmt.Errorf("path traversal not allowed")
 	}
 

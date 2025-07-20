@@ -1,0 +1,49 @@
+# gosysmesh - System Process Monitoring Configuration
+# Example configuration file
+
+# How often to collect metrics (when using --loop mode)
+interval: "30s"
+
+monitor:
+  # Local system monitoring
+  local:
+    process_filters:
+      keywords:
+        - "docker"
+        - "nginx"
+        - "postgres"
+      users:
+        - "root"
+        - "www-data"
+
+  # Remote systems monitoring (via SSH)
+  remote:
+    - host: "192.168.1.100"
+      user: "admin"
+      port: 22
+      ssh_key: "~/.ssh/id_rsa"
+      # proxy_jump: "jumphost.example.com"  # Optional jump host
+      process_filters:
+        keywords:
+          - "apache"
+          - "mysql"
+        users:
+          - "admin"
+          - "mysql"
+
+    - host: "server2.example.com"
+      user: "deploy"
+      port: 22
+      ssh_key: "~/.ssh/deploy_key"
+      process_filters:
+        keywords:
+          - "node"
+          - "pm2"
+        users:
+          - "deploy"
+
+# Notes:
+# - Copy this file to ~/.gosysmesh.yaml or specify with --config
+# - SSH keys must exist and have proper permissions (600)
+# - Remote hosts must have your public key in authorized_keys
+# - StrictHostKeyChecking is enabled for security - add hosts to known_hosts first
