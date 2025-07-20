@@ -19,7 +19,7 @@ type RemoteMetrics struct {
 
 // CollectRemoteStats collects process info from a remote server via OpenSSH
 func CollectRemoteStats(target config.RemoteTarget) (*RemoteMetrics, error) {
-	cmd := `ps -eo pid,user,%cpu,%mem,stat,lstart,args --no-headers`
+	cmd := fmt.Sprintf(`ps -u %s -o pid,user,%%cpu,%%mem,stat,lstart,args --no-headers`, target.User)
 	output, err := RunSSHCommandOpenSSH(target.User, target.Host, target.Port, target.SSHKey, target.ProxyJump, cmd)
 	if err != nil {
 		return nil, fmt.Errorf("failed to run remote ps on %s: %w", target.Host, err)
