@@ -1,3 +1,4 @@
 interval: "5s"
 monitor:
   remote: []
+EOF < /dev/null

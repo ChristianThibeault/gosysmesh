@@ -13,8 +13,8 @@ import (
 type SystemStats struct {
 	Timestamp   time.Time
 	CPUPercent  float64
-	MemUsedMB   float64
-	MemTotalMB  float64
+	MemUsedGB   float64
+	MemTotalGB  float64
 	DiskUsedGB  float64
 	DiskTotalGB float64
 }
@@ -39,8 +39,8 @@ func GetSystemStats() (*SystemStats, error) {
 	return &SystemStats{
 		Timestamp:   time.Now(),
 		CPUPercent:  cpuPercents[0],
-		MemUsedMB:   float64(vm.Used) / 1024 / 1024,
-		MemTotalMB:  float64(vm.Total) / 1024 / 1024,
+		MemUsedGB:   float64(vm.Used) / 1024 / 1024 / 1024,
+		MemTotalGB:  float64(vm.Total) / 1024 / 1024 / 1024,
 		DiskUsedGB:  float64(diskStats.Used) / 1024 / 1024 / 1024,
 		DiskTotalGB: float64(diskStats.Total) / 1024 / 1024 / 1024,
 	}, nil

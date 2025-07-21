@@ -1,6 +1,6 @@
+interval: invalid-duration
 monitor:
   local:
     process_filters:
       keywords: ["test"]
   remote: []
-EOF < /dev/null

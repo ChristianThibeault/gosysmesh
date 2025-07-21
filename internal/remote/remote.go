@@ -152,8 +152,8 @@ func parseSystemStatsOutput(output string) (*collector.SystemStats, error) {
 	return &collector.SystemStats{
 		Timestamp:   time.Now(),
 		CPUPercent:  cpuPercent,
-		MemUsedMB:   memUsed,
-		MemTotalMB:  memTotal,
+		MemUsedGB:   memUsed / 1024,
+		MemTotalGB:  memTotal / 1024,
 		DiskUsedGB:  diskUsed,
 		DiskTotalGB: diskTotal,
 	}, nil

@@ -69,10 +69,10 @@ func runMonitoring(conf *config.Config) {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error collecting stats: %v\n", err)
 	} else {
-		fmt.Printf("[%s] CPU: %.1f%% | MEM: %.0f/%.0f MB | DISK: %.1f/%.1f GB\n",
+		fmt.Printf("[%s] CPU: %.1f%% | MEM: %.2f/%.2f GB | DISK: %.1f/%.1f GB\n",
 			stats.Timestamp.Format("15:04:05"),
 			stats.CPUPercent,
-			stats.MemUsedMB, stats.MemTotalMB,
+			stats.MemUsedGB, stats.MemTotalGB,
 			stats.DiskUsedGB, stats.DiskTotalGB,
 		)
 	}
@@ -82,7 +82,10 @@ func runMonitoring(conf *config.Config) {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error filtering processes: %v\n", err)
 	} else {
+		if len(filtered) > 0 {
 		printHostProcesses("local", time.Now(), filtered)
+	}
+
 	}
 
 	// Collect and print remote stats
@@ -95,10 +98,10 @@ func runMonitoring(conf *config.Config) {
 
 		// Print remote system stats
 		if metrics.SystemStats != nil {
-			fmt.Printf("[%s][%s] CPU: %.1f%% | MEM: %.0f/%.0f MB | DISK: %.1f/%.1f GB\n",
+			fmt.Printf("[%s][%s] CPU: %.1f%% | MEM: %.2f/%.2f GB | DISK: %.1f/%.1f GB\n",
 				metrics.Timestamp.Format("15:04:05"), metrics.Host,
 				metrics.SystemStats.CPUPercent,
-				metrics.SystemStats.MemUsedMB, metrics.SystemStats.MemTotalMB,
+				metrics.SystemStats.MemUsedGB, metrics.SystemStats.MemTotalGB,
 				metrics.SystemStats.DiskUsedGB, metrics.SystemStats.DiskTotalGB,
 			)
 		}
