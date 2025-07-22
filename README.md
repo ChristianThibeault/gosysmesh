@@ -28,6 +28,8 @@ go build
 ./gosysmesh start --config example-config.yaml
 
 # Run continuously with monitoring interval
+watch ./gosysmesh start --config example-config.yaml
+# or
 ./gosysmesh start --loop --config example-config.yaml
 ```
 
