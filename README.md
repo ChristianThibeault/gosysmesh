@@ -1,15 +1,14 @@
 # gosysmesh
 
-A secure system and process monitoring tool for local and remote servers via SSH.
+A system and process monitoring tool for local and remote servers via SSH.
 
 ## Features
 
-- 🖥️ **Local System Monitoring**: CPU, memory, disk usage and process information
-- 🌐 **Remote Monitoring**: Monitor multiple remote servers via SSH
-- 🎯 **Process Filtering**: Filter by keywords, users, and other criteria
-- 🔒 **Security First**: Host key verification, input validation, command injection prevention
-- ⚡ **Flexible Usage**: Run once or continuously with configurable intervals
-- 🔗 **SSH Jump Hosts**: Support for proxy jump connections
+- **Local System Monitoring**: CPU, memory, disk usage and process information
+- **Remote Monitoring**: Monitor multiple remote servers via SSH
+- **Process Filtering**: Filter by keywords, users, and other criteria
+- **Flexible output**: Run once or continuously with configurable intervals
+- **SSH Jump Hosts**: Support for proxy jump connections
 
 ## Quick Start
 
@@ -46,7 +45,7 @@ monitor:
       users: ["root", "www-data"]
   remote:
     - host: "192.168.1.100"
-      user: "admin"
+      user: "MyUser"
       port: 22
       ssh_key: "~/.ssh/id_rsa"
       process_filters:
@@ -80,7 +79,7 @@ ssh-keyscan -H your-remote-host >> ~/.ssh/known_hosts
 ./gosysmesh start
 ```
 
-### Continuous monitoring every 60 seconds
+### Continuous monitoring every 30 seconds
 ```bash
 ./gosysmesh start --loop --config my-config.yaml
 ```
@@ -100,12 +99,12 @@ monitor:
 [15:04:05] CPU: 15.2% | MEM: 2048/8192 MB | DISK: 45.2/100.0 GB
 ├── PID 1234  : /usr/bin/nginx -g daemon off;
 │   ├── CPU: 2.1%   MEM: 1.5%
-│   └── Start: Mon Jan  1 10:00:00   Stat: S   User: www-data
+│   └── Start: Mon Jan  1 10:00:00   Stat: S   User: MyUser
 
 [15:04:05][server1] CPU: 8.5% | MEM: 1024/4096 MB | DISK: 25.1/50.0 GB
 └── PID 5678  : /usr/bin/postgres
     ├── CPU: 0.8%   MEM: 12.3%
-    └── Start: Sun Dec 31 09:00:00   Stat: S   User: postgres
+    └── Start: Sun Dec 31 09:00:00   Stat: S   User: AnotherUser
 ```
 
 ## Development
